@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *******************************************************************************/
-package org.eclipse.rdf4j.rio.ndjsonld;
+package ndjsonld.legacy;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -26,7 +26,7 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
 import org.eclipse.rdf4j.rio.RDFParseException;
-import org.eclipse.rdf4j.rio.jsonld.JSONLDParser;
+import org.eclipse.rdf4j.rio.jsonld.legacy.JSONLDParser;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;

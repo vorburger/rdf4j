@@ -80,18 +80,6 @@ public class JSONLDParser extends AbstractRDFParser {
 	public Collection<RioSetting<?>> getSupportedSettings() {
 		Collection<RioSetting<?>> result = super.getSupportedSettings();
 
-		result.add(JSONSettings.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER);
-		result.add(JSONSettings.ALLOW_COMMENTS);
-		result.add(JSONSettings.ALLOW_NON_NUMERIC_NUMBERS);
-		result.add(JSONSettings.ALLOW_NUMERIC_LEADING_ZEROS);
-		result.add(JSONSettings.ALLOW_SINGLE_QUOTES);
-		result.add(JSONSettings.ALLOW_UNQUOTED_CONTROL_CHARS);
-		result.add(JSONSettings.ALLOW_UNQUOTED_FIELD_NAMES);
-		result.add(JSONSettings.ALLOW_YAML_COMMENTS);
-		result.add(JSONSettings.ALLOW_TRAILING_COMMA);
-		result.add(JSONSettings.INCLUDE_SOURCE_IN_LOCATION);
-		result.add(JSONSettings.STRICT_DUPLICATE_DETECTION);
-
 		result.add(JSONLDSettings.DOCUMENT_LOADER);
 
 		return result;
