@@ -24,7 +24,6 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.RioSetting;
 import org.eclipse.rdf4j.rio.helpers.AbstractRDFParser;
-import org.eclipse.rdf4j.rio.helpers.JSONLDSettings;
 import org.eclipse.rdf4j.rio.helpers.JSONSettings;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -125,7 +124,17 @@ public class JSONLDParser extends AbstractRDFParser {
 			final JsonLdOptions options = baseURI != null ? new JsonLdOptions(baseURI) : new JsonLdOptions();
 			options.useNamespaces = true;
 
-			DocumentLoader loader = getParserConfig().get(JSONLDSettings.DOCUMENT_LOADER);
+			Object o = getParserConfig().get(JSONLDSettings.DOCUMENT_LOADER);
+			DocumentLoader loader;
+			if (o instanceof DocumentLoader) {
+				loader = ((DocumentLoader) o);
+			} else if (o == null) {
+				loader = null;
+			} else {
+				throw new RDFParseException("Document loader is wrong class. Expected " + DocumentLoader.class.getName()
+						+ ", got " + o.getClass().getName() + ".");
+			}
+
 			if (loader != null) {
 				options.setDocumentLoader(loader);
 			}

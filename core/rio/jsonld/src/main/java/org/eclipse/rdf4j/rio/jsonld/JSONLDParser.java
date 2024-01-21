@@ -13,10 +13,11 @@ package org.eclipse.rdf4j.rio.jsonld;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
 import org.eclipse.rdf4j.model.BNode;
@@ -33,18 +34,20 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.RioSetting;
 import org.eclipse.rdf4j.rio.helpers.AbstractRDFParser;
-import org.eclipse.rdf4j.rio.helpers.JSONLDSettings;
-import org.eclipse.rdf4j.rio.helpers.JSONSettings;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import no.hasmac.jsonld.JsonLd;
+import no.hasmac.jsonld.JsonLdError;
 import no.hasmac.jsonld.JsonLdOptions;
 import no.hasmac.jsonld.document.Document;
 import no.hasmac.jsonld.document.JsonDocument;
 import no.hasmac.jsonld.lang.Keywords;
+import no.hasmac.jsonld.loader.DocumentLoader;
+import no.hasmac.jsonld.loader.DocumentLoaderOptions;
+import no.hasmac.jsonld.loader.SchemeRouter;
 import no.hasmac.rdf.RdfConsumer;
 import no.hasmac.rdf.RdfValueFactory;
 
@@ -80,7 +83,7 @@ public class JSONLDParser extends AbstractRDFParser {
 	public Collection<RioSetting<?>> getSupportedSettings() {
 		Collection<RioSetting<?>> result = super.getSupportedSettings();
 
-		result.add(JSONLDSettings.DOCUMENT_LOADER);
+		result.add(JSONLDSettings.EXPAND_CONTEXT);
 
 		return result;
 	}
@@ -123,8 +126,40 @@ public class JSONLDParser extends AbstractRDFParser {
 			}
 
 			JsonLdOptions opts = new JsonLdOptions();
-
 			opts.setUriValidation(false);
+
+			JsonDocument context = getParserConfig().get(JSONLDSettings.EXPAND_CONTEXT);
+
+			if (context != null) {
+
+				opts.setExpandContext(context);
+
+				if (context.getDocumentUrl() != null) {
+					Optional<JsonStructure> jsonContent = context.getJsonContent();
+					if (jsonContent.isEmpty()) {
+						throw new RDFParseException("Expand context is not a valid JSON document");
+					}
+					opts.getContextCache().put(context.getDocumentUrl().toString(), jsonContent.get());
+					opts.setDocumentLoader(new DocumentLoader() {
+
+						private final DocumentLoader defaultDocumentLoader = SchemeRouter.defaultInstance();
+
+						@Override
+						public Document loadDocument(URI url, DocumentLoaderOptions options) throws JsonLdError {
+							if (url.equals(context.getDocumentUrl())) {
+								return context;
+							}
+							return defaultDocumentLoader.loadDocument(url, options);
+						}
+					});
+				}
+
+			}
+
+			if (baseURI != null) {
+				URI uri = new URI(baseURI);
+				opts.setBase(uri);
+			}
 
 			RDFHandler rdfHandler = getRDFHandler();
 
@@ -195,6 +230,8 @@ public class JSONLDParser extends AbstractRDFParser {
 				throw (RDFParseException) e.getCause();
 			}
 			throw e;
+		} catch (URISyntaxException e) {
+			throw new RDFParseException("Base uri is not a valid URI, " + baseURI, e);
 		} finally {
 			clear();
 		}

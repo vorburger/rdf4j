@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.Reader;
 import java.io.StringReader;
+import java.net.URI;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
@@ -33,16 +33,11 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.helpers.ContextStatementCollector;
-import org.eclipse.rdf4j.rio.helpers.JSONLDSettings;
-import org.eclipse.rdf4j.rio.helpers.JSONSettings;
 import org.eclipse.rdf4j.rio.helpers.ParseErrorCollector;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.io.ContentReference;
-import com.github.jsonldjava.core.DocumentLoader;
+import no.hasmac.jsonld.document.JsonDocument;
 
 /**
  * Custom (non-manifest) tests for JSON-LD parser.
@@ -225,11 +220,12 @@ public class JSONLDParserCustomTest {
 	}
 
 	@Test
-	public void testDocumentLoader() throws Exception {
-		DocumentLoader loader = new DocumentLoader();
-		loader.addInjectedDoc("http://example.com/context.jsonld", LOADER_CONTEXT);
+	public void testContext() throws Exception {
 
-		parser.getParserConfig().set(JSONLDSettings.DOCUMENT_LOADER, loader);
+		JsonDocument jsonDocument = JsonDocument.of(new StringReader(LOADER_CONTEXT));
+		jsonDocument.setDocumentUrl(URI.create("http://example.com/context.jsonld"));
+
+		parser.getParserConfig().set(JSONLDSettings.EXPAND_CONTEXT, jsonDocument);
 		parser.parse(new StringReader(LOADER_JSONLD), "");
 		assertTrue(model.predicates().contains(testPredicate));
 	}

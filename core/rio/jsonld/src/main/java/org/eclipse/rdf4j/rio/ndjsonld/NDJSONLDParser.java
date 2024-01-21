@@ -62,27 +62,27 @@ public class NDJSONLDParser extends JSONLDParser {
 	public RDFFormat getRDFFormat() {
 		return RDFFormat.NDJSONLD;
 	}
-
-	@Override
-	protected Object getJSONObject(InputStream in, Reader reader, JsonFactory factory) throws IOException {
-		List<Object> arrayOfJSONLD = new LinkedList<>();
-		try (BufferedReader bufferedReader = new BufferedReader(reader)) {
-			String line;
-			while ((line = bufferedReader.readLine()) != null) {
-				if (!line.isEmpty()) {
-					JsonParser nextParser = factory
-							.createParser(new ByteArrayInputStream(line.getBytes(StandardCharsets.UTF_8)));
-					Object singleJSONLD = JsonUtils.fromJsonParser(nextParser);
-					if (singleJSONLD instanceof List) {
-						arrayOfJSONLD.addAll((List) singleJSONLD);
-					} else {
-						arrayOfJSONLD.add(singleJSONLD);
-					}
-				}
-			}
-			return arrayOfJSONLD;
-		}
-	}
+//
+//	@Override
+//	protected Object getJSONObject(InputStream in, Reader reader, JsonFactory factory) throws IOException {
+//		List<Object> arrayOfJSONLD = new LinkedList<>();
+//		try (BufferedReader bufferedReader = new BufferedReader(reader)) {
+//			String line;
+//			while ((line = bufferedReader.readLine()) != null) {
+//				if (!line.isEmpty()) {
+//					JsonParser nextParser = factory
+//							.createParser(new ByteArrayInputStream(line.getBytes(StandardCharsets.UTF_8)));
+//					Object singleJSONLD = JsonUtils.fromJsonParser(nextParser);
+//					if (singleJSONLD instanceof List) {
+//						arrayOfJSONLD.addAll((List) singleJSONLD);
+//					} else {
+//						arrayOfJSONLD.add(singleJSONLD);
+//					}
+//				}
+//			}
+//			return arrayOfJSONLD;
+//		}
+//	}
 
 	@Override
 	public void parse(InputStream in, String baseURI) throws RDFParseException, RDFHandlerException, IOException {
