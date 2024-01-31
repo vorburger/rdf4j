@@ -156,7 +156,7 @@ public class JSONLDParser extends AbstractRDFParser {
 
 			}
 
-			if (baseURI != null) {
+			if (baseURI != null && !baseURI.isEmpty()) {
 				URI uri = new URI(baseURI);
 				opts.setBase(uri);
 			}
