@@ -10,16 +10,14 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.rio.jsonld;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,15 +44,14 @@ import org.eclipse.rdf4j.rio.helpers.AbstractRDFWriter;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
 import org.eclipse.rdf4j.rio.helpers.StatementCollector;
 
-import com.github.jsonldjava.core.JsonLdConsts;
-import com.github.jsonldjava.core.JsonLdError;
-import com.github.jsonldjava.core.JsonLdOptions;
-import com.github.jsonldjava.core.JsonLdProcessor;
-import com.github.jsonldjava.utils.JsonUtils;
-
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonStructure;
 import jakarta.json.JsonWriter;
+import no.hasmac.jsonld.JsonLd;
+import no.hasmac.jsonld.JsonLdOptions;
+import no.hasmac.jsonld.document.Document;
+import no.hasmac.jsonld.document.JsonDocument;
 import no.hasmac.jsonld.serialization.RdfToJsonld;
 import no.hasmac.rdf.RdfDataset;
 import no.hasmac.rdf.RdfGraph;
@@ -144,50 +141,20 @@ public class JSONLDWriter extends AbstractRDFWriter implements CharSink {
 		checkWritingStarted();
 //        final JSONLDInternalRDFParser serialiser = new JSONLDInternalRDFParser();
 		try {
-//            final JsonLdOptions opts = new JsonLdOptions();
-//            // opts.addBlankNodeIDs =
-//            // getWriterConfig().get(BasicParserSettings.PRESERVE_BNODE_IDS);
-//            WriterConfig writerConfig = getWriterConfig();
-//            opts.setCompactArrays(writerConfig.get(JSONLDSettings.COMPACT_ARRAYS));
-//            opts.setProduceGeneralizedRdf(writerConfig.get(JSONLDSettings.PRODUCE_GENERALIZED_RDF));
-//            opts.setUseRdfType(writerConfig.get(JSONLDSettings.USE_RDF_TYPE));
-//            opts.setUseNativeTypes(writerConfig.get(JSONLDSettings.USE_NATIVE_TYPES));
-//            // opts.optimize = getWriterConfig().get(JSONLDSettings.OPTIMIZE);
-//
-//            Object output = JsonLdProcessor.fromRDF(model, opts, serialiser);
-//
-//            final JSONLDMode mode = getWriterConfig().get(JSONLDSettings.JSONLD_MODE);
-//
-//            if (writerConfig.get(JSONLDSettings.HIERARCHICAL_VIEW)) {
-//                output = JSONLDHierarchicalProcessor.fromJsonLdObject(output);
-//            }
-//
-//            if (baseURI != null && writerConfig.get(BasicWriterSettings.BASE_DIRECTIVE)) {
-//                opts.setBase(baseURI);
-//            }
-//            if (mode == JSONLDMode.EXPAND) {
-//                output = JsonLdProcessor.expand(output, opts);
-//            }
-//            // TODO: Implement inframe in JSONLDSettings
-//            final Object inframe = null;
-//            if (mode == JSONLDMode.FLATTEN) {
-//                output = JsonLdProcessor.flatten(output, inframe, opts);
-//            }
-//            if (mode == JSONLDMode.COMPACT) {
-//                final Map<String, Object> ctx = new LinkedHashMap<>();
-//                addPrefixes(ctx, model.getNamespaces());
-//                final Map<String, Object> localCtx = new HashMap<>();
-//                localCtx.put(JsonLdConsts.CONTEXT, ctx);
-//
-//                output = JsonLdProcessor.compact(output, localCtx, opts);
-//            }
-//            if (writerConfig.get(BasicWriterSettings.PRETTY_PRINT)) {
-//                JsonUtils.writePrettyPrint(writer, output);
-//            } else {
-//                JsonUtils.write(writer, output);
-//            }
+			final JsonLdOptions opts = new JsonLdOptions();
+			// opts.addBlankNodeIDs =
+			// getWriterConfig().get(BasicParserSettings.PRESERVE_BNODE_IDS);
+			WriterConfig writerConfig = getWriterConfig();
+			opts.setCompactArrays(writerConfig.get(JSONLDSettings.COMPACT_ARRAYS));
+			opts.setProduceGeneralizedRdf(writerConfig.get(JSONLDSettings.PRODUCE_GENERALIZED_RDF));
+			opts.setUseRdfType(writerConfig.get(JSONLDSettings.USE_RDF_TYPE));
+			opts.setUseNativeTypes(writerConfig.get(JSONLDSettings.USE_NATIVE_TYPES));
+			// opts.optimize = getWriterConfig().get(JSONLDSettings.OPTIMIZE);
+			if (baseURI != null && writerConfig.get(BasicWriterSettings.BASE_DIRECTIVE)) {
+				opts.setBase(URI.create(baseURI));
+			}
 
-			JsonArray jsonArray = RdfToJsonld.with(new RdfDataset() {
+			JsonStructure jsonld = RdfToJsonld.with(new RdfDataset() {
 				@Override
 				public RdfGraph getDefaultGraph() {
 					return new RdfGraph() {
@@ -266,14 +233,42 @@ public class JSONLDWriter extends AbstractRDFWriter implements CharSink {
 				public int size() {
 					return model.size();
 				}
-			}).build();
+			})
+					.useNativeTypes(writerConfig.get(JSONLDSettings.USE_NATIVE_TYPES))
+					.useRdfType(writerConfig.get(JSONLDSettings.USE_RDF_TYPE))
+					.build();
+
+			JSONLDMode mode = getWriterConfig().get(JSONLDSettings.JSONLD_MODE);
+
+			if (mode == JSONLDMode.EXPAND) {
+
+				jsonld = JsonLd.expand(JsonDocument.of(jsonld)).options(opts).get();
+			}
+//            // TODO: Implement inframe in JSONLDSettings
+//            final Object inframe = null;
+			if (mode == JSONLDMode.FLATTEN) {
+				jsonld = JsonLd.flatten(JsonDocument.of(jsonld)).options(opts).get();
+			}
+//            if (mode == JSONLDMode.COMPACT) {
+//                final Map<String, Object> ctx = new LinkedHashMap<>();
+//                addPrefixes(ctx, model.getNamespaces());
+//                final Map<String, Object> localCtx = new HashMap<>();
+//                localCtx.put(JsonLdConsts.CONTEXT, ctx);
+//
+//                output = JsonLdProcessor.compact(output, localCtx, opts);
+//            }
+//            if (writerConfig.get(BasicWriterSettings.PRETTY_PRINT)) {
+//                JsonUtils.writePrettyPrint(writer, output);
+//            } else {
+//                JsonUtils.write(writer, output);
+//            }
 
 			try (JsonWriter jsonWriter = Json.createWriter(writer)) {
-				jsonWriter.writeArray(jsonArray);
+				jsonWriter.write(jsonld);
 				writer.flush();
 			}
 
-		} catch (JsonLdError | no.hasmac.jsonld.JsonLdError | IOException e) {
+		} catch (no.hasmac.jsonld.JsonLdError | IOException e) {
 			throw new RDFHandlerException("Could not render JSONLD", e);
 		}
 	}
@@ -507,15 +502,4 @@ public class JSONLDWriter extends AbstractRDFWriter implements CharSink {
 		return result;
 	}
 
-	/**
-	 * Add name space prefixes to JSON-LD context, empty prefix gets the '@vocab' prefix
-	 *
-	 * @param ctx        context
-	 * @param namespaces set of RDF name spaces
-	 */
-	private static void addPrefixes(Map<String, Object> ctx, Set<Namespace> namespaces) {
-		for (final Namespace ns : namespaces) {
-			ctx.put(ns.getPrefix().isEmpty() ? JsonLdConsts.VOCAB : ns.getPrefix(), ns.getName());
-		}
-	}
 }
